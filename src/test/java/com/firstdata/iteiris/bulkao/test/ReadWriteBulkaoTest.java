@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 public class ReadWriteBulkaoTest {
@@ -48,7 +49,8 @@ public class ReadWriteBulkaoTest {
         ffDefinition.setHeader(Header.class);
         ffDefinition.setTrailer(Trailer.class);
         FlatFileReader ffReader = new FileSystemFlatFileReader(inputFile, ffDefinition);
-        for (Object record : ffReader) {
+
+        ffReader.forEach(record -> {
             RecordType recordType = ffReader.getRecordType();
             if (recordType == RecordType.HEADER) {
                 System.out.print("HEADER FOUND: ");
@@ -62,21 +64,34 @@ public class ReadWriteBulkaoTest {
                 Trailer trailer = (Trailer) record;
                 System.out.printf("[%d]\n", trailer.getRecordsCount());
             }
-        }
+        });
         ffReader.close();
     }
 
     @Test
     public void writeCustomersTest() {
+        this.helper = FFPojoHelper.getInstance();
+        Header header = new Header();
+
+        header.setControlNumber(123L);
+        header.setProcessDate(new Date());
+
+        String s1 = this.helper.parseToText(header);
+
+        System.out.println(s1);
 
         List<Customer> customers = CustomerMockFactory.createCustomersMockList();
-
-        this.helper = FFPojoHelper.getInstance();
         customers.forEach(customer -> {
             String s = this.helper.parseToText(customer);
 
             System.out.println(s);
         });
+
+        Trailer trailer = new Trailer();
+
+        trailer.setRecordsCount(3);
+
+        System.out.println(this.helper.parseToText(trailer));
 
     }
 
